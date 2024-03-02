@@ -28,9 +28,8 @@
 
 <ul>
 	<li>All-in-one installer a la Baller, but for Mac.
-
-		<ul>
-			<li>&lt;possibly TMI&gt;VPX package for Mac is kind of like a native app and kind of not like one. Paths like ‘/.vpinball and~/.pinmame’ aren’t visible in Finder by default. There isn’t comprehensive documentation for Mac users today. In the short term I want to give users info and resources to get VPX running on their Mac. An all-in-one installer is probably the easiest way to improve the UX.</li>
+	<ul>
+		<li>(possibly TMI:) VPX package for Mac is kind of like a native app and kind of not like one. Paths like ‘/.vpinball and~/.pinmame’ aren’t visible in Finder by default. There isn’t comprehensive documentation for Mac users today. In the short term I want to give users info and resources to get VPX running on their Mac. An all-in-one installer is probably the easiest way to improve the UX.</li>
 		</ul></li>
 	<li>Some representation of what each table looks like (screenshot, video, something)</li>
 	<li>B2S solution. Imagine three screens with your Mac, an iPad, and an iPhone as a portable cab. Imagine docking your MacBook into a proper cabinet build. There’s a project for a <a href="https://github.com/jsm174/vpxds">Linux B2s server</a> that might run on MacOS or serve as a starting point.</li>
