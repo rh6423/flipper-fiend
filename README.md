@@ -17,11 +17,9 @@
 	<li>Launcher interface with library view and wheel image support.</li>
 	<li>Index directory of VPX tables and link metadata from <a href="https://virtual-pinball-spreadsheet.web.app" title="the Virtual Pinball spreadsheet">the Virtual Pinball spreadsheet</a>.</li>
 	<li>Edit individual table settings and data
-
-		<ul>
-			<li>Add wheel images</li>
-			<li>Enable/disable in library view</li>
-			<li>Favorite (for library filter)</li>
+		<li>Add wheel images</li>
+		<li>Enable/disable in library view</li>
+		<li>Favorite (for library filter)</li>
 		</ul></li>
 	<li>Preferences for location of VPX app, table directory, wheel images, etc</li>
 </ul>
