@@ -1,4 +1,5 @@
-<h1>FlipperFiend</h1>
+# flipper-fiend
+<center><h1>FlipperFiend</h1></center>
 
 <h4><em>“It shouldn’t matter what OS you use if you just want to play some pinball.”</em></h4>
 
