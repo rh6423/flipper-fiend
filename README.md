@@ -1,5 +1,7 @@
 <h1>FlipperFiend</h1>
 
+<img src="images/FlipperFiend.png" alt="FlipperFiend">
+
 <h4><em>“It shouldn’t matter what OS you use if you just want to play some pinball.”</em></h4>
 
 <h2>IMPORTANT: Flipper Fiend (FF) is at the semi-working prototype stage. <a href="./status.md">Status page</a> has details at the moment. I'll remove this message when things are more user-ready for beta testing.</h2>
