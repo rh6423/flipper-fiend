@@ -56,5 +56,3 @@
 
 <p>It’s good to be a fiend, but don’t be an ass.</p>
 
-
-# flipper-fiend
