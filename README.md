@@ -2,6 +2,7 @@
 
 <h4><em>“It shouldn’t matter what OS you use if you just want to play some pinball.”</em></h4>
 
+<h2>IMPORTANT: Flipper Fiend (FF) is at the semi-working prototype stage. <a href="./status.md">Status page has details at the moment. I'll remove this message when things are more user-ready for beta testing.</h2>
 <h3>What is it?</h3>
 
 <p>There are some great Visual Pinball front end options today for Windows and Linux users, but the best thing I’ve found for Mac is <a href="https://github.com/francisdb/vpxtool">Vpxtool</a>, and it’s text based. FlipperFiend will be a Mac-first front end and table manager that can also run on Linux and Windows.</p>
