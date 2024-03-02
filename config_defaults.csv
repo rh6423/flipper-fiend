@@ -1,0 +1,6 @@
+config_item,label,value,description
+upopper_path,UPopper Directory Path,~/UPopper,Directory where UPopper is installed
+vpx_table_path,VPX Table directory,~/UPopper/VPXTables,Directory where VPX tables are stored
+wheelimage_file_path,Wheel Image Directory,~/UPopper/wheelimages,Directory where wheel images are stored
+vpx_app,VPX App,/Applications/VPinballX_GL.app,Directory where VPX app is stored
+macos_command,macOS Command,/Contents/MacOS/VPinballX_GL,Command to start VPX

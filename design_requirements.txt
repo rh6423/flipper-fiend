@@ -1,0 +1,9 @@
+1. Keep track of user's local configuration
+    a. Asu user some questions and Store user's local configuration in a file config.csv on first run
+    b. Read user's local configuration from the file config.csv on subsequent runs
+    c. use config_defaults.csv for initial settings
+    d. Schema for config.csv: config_item,label,value,description
+    e. config items managed in config.csv: vpx_table_path, wheelimage_file_path, vpx_app, macos_command
+2. Keep track of tables installed in user's vpx_tables directory in upopper.csv
+    a. scan vpx_tables directory and store table names in upopper.csv on first run
+    b. look for matching tables in puplookup.csv

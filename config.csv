@@ -1,0 +1,5 @@
+config_item,label,value,description
+vpx_table_path,,/Users/legba/Documents/VPXTables,
+wheelimage_file_path,,/Users/legba/Pinball/wheelimages,
+vpx_app,,/Applications/VPinballX_GL.app,
+macos_command,,/Applications/VPinballX_GL.app/Contents/Macos/VPinballX_GL,
