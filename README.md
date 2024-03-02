@@ -59,3 +59,6 @@
 
 <p>It’s good to be a fiend, but don’t be an ass.</p>
 
+<p><img src="./images/defaultimg.png" alt="Mac Pinball logo" width="256" height="256"><br>
+<i>Made on the Mac where I play Medusa.</i></p>
+
