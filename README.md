@@ -1,6 +1,6 @@
 <h1>FlipperFiend</h1>
 
-<img src="./images/FlipperFiend_1024.jpg" alt="FlipperFiend">
+<img src="./images/FlipperFiend_1024.jpg" alt="FlipperFiend" width="512" height="512">
 
 <h4><em>“It shouldn’t matter what OS you use if you just want to play some pinball.”</em></h4>
 
