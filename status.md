@@ -6,4 +6,4 @@
 
 <p>main.py is mostly functional as a library/launcher view. Requires some initial configuration, so it calls firstrun.py to set that up. It depends on a valid config.csv, so it calls gamemanager and scantables to set that up. This part isn’t done yet, and I created the example config.csv by hand for my local config. If you do the same, the launcher should work for you.</p>
 
-
+<p>puplookup.csv is included for testing and development here. It will be downloaded at install from the source so it's current.</p>
