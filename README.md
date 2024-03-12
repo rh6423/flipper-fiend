@@ -4,11 +4,11 @@
 
 <h4><em>“It shouldn’t matter what OS you use if you just want to play some pinball.”</em></h4>
 
-<h2>IMPORTANT: Flipper Fiend (FF) is currently alpha software. You'll need some familiarity with Python to run the alpha.</h2>
+<h4>IMPORTANT: Flipper Fiend (FF) is currently alpha software. You'll need some familiarity with Python to run the alpha.</h4>
 
 <h3> Quick Links:</h3>
-<h4><a href="./Installation.md">Installation instructions</a></h4>
-<h4><a href="./status.md">Status page</a> has details at the moment. I'll remove this message when things are more user-ready for beta testing.</h4>
+<h4><a href="./Installation.md">Installation instructions</a>
+<a href="./status.md">Status page</a> has details at the moment. I'll remove this message when things are more user-ready for beta testing.</h4>
 
 <h3>What is it?</h3>
 
