@@ -7,8 +7,9 @@
 <h2>IMPORTANT: Flipper Fiend (FF) is currently alpha software. You'll need some familiarity with Python to run the alpha.</h2>
 
 <h3> Quick Links:</h3>
-<p><a href="./status.md">Status page</a> has details at the moment. I'll remove this message when things are more user-ready for beta testing.
-<a href="./Installation.md">Installation instructions</a>
+<h4><a href="./Installation.md">Installation instructions</a></h4>
+<h4><a href="./status.md">Status page</a> has details at the moment. I'll remove this message when things are more user-ready for beta testing.</h4>
+
 <h3>What is it?</h3>
 
 <p>There are some great Visual Pinball front end options today for Windows and Linux users, but the best thing I’ve found for Mac is <a href="https://github.com/francisdb/vpxtool">Vpxtool</a>, and it’s text based. FlipperFiend will be a Mac-first front end and table manager that can also run on Linux and Windows.</p>
