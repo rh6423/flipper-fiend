@@ -35,8 +35,8 @@ class MainWindow(QMainWindow):
         self.resize(1024, 768)
         
         # Load CSV data
-        self.upopdb_data = self.load_csv("upopdb.csv")
-        self.model = CsvTableModel(self.upopdb_data)
+        self.ffiend_data = self.load_csv("ffiend.csv")
+        self.model = CsvTableModel(self.ffiend_data)
         
         # Main layout
         layout = QVBoxLayout()
@@ -95,8 +95,8 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Selection Required", "Please select a game to edit.")
 
     def open_edit_window(self, game_id):
-        #  Redraw the window with the selected game's data from upopdb.csv in an edit window
-        # there should be an edit field for each column in upopdb.csv
+        #  Redraw the window with the selected game's data from ffiend.csv in an edit window
+        # there should be an edit field for each column in ffiend.csv
         self.edit_window = EditGameWindow(game_id)
         self.edit_window.show()
         

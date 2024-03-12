@@ -1,0 +1,5 @@
+config_item,label,value,description
+vpx_table_path,,/Users/legba/Documents/VPXTables,Location of VPX tables
+wheelimage_file_path,,wheels,Location of wheel images defaults to ffiend/wheels
+vpx_app,,/Applications/VPinballX_GL.app,location where your VPX app is installed
+macos_command,,/Contents/Macos/VPinballX_GL,this gets appended to vpx_app at runtime

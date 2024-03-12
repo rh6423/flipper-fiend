@@ -27,12 +27,9 @@ import re
 def parse_filename(vpx_file):
     """
     Extracts year, manufacturer, and name from the filename.
-    This is a simplified example and may need to be adjusted.
     
     EXAMPLE filenames:
     1-2-3 (Talleres de Llobregat 1973) v4.vpx
-    2001 (Gottlieb 1971) v0.99a.vpx
-    250cc (Inder - 1992) v4.vpx
     300 (Special Edition) (Gottlieb 1975) team scampa123 mod  v1.1.vpx
     301 Bullseye (Grand Products 1986).vpx
     4 Aces (Williams 1970) JP_VPX8.vpx
@@ -40,16 +37,6 @@ def parse_filename(vpx_file):
     8 Ball (Williams 1966) 1.2.1.vpx
     AC-DC LUCI Premium VR (Stern 2013) v1.1.vpx
     Aaron Spinlling (Data East 1992) v1.02.vpx
-    AbraCaDabra (Gottlieb1975) 1.1.0.vpx
-    AceOfSpeed.vpx
-    Aces High (Bally 1965) v1.1.0 - 4K - Dakarx - English.vpx
-    Aces High (Bally 1965).vpx
-    Airport (Gottlieb 1969) 1.2.2.vpx
-    Aladdin's Castle (Bally 1976) - DOZER - MJR_1.01.vpx
-    Algar (Williams 1980) 1.33.vpx
-    Alice in Wonderland (Gottlieb 1948) JP_VPX8.vpx
-    Alien Poker (Williams 1980).vpx
-    Alien Star (Gottlieb 1984) v2.0.1.vpx
     
     """
     # use a regex match on a space followed by four digits in a row 
@@ -93,19 +80,12 @@ def find_closest_match(vpx_file, png_files):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Scan VPX tables and update or add them to upopdb.csv.')
+    parser = argparse.ArgumentParser(description='Scan VPX tables and update or add them to ffiend.csv.')
     parser.add_argument('vpx_table_path', help='Path to VPXTables directory')
     parser.add_argument('wheelimage_file_path', help='Path to wheel image files')
     parser.add_argument('vpxtool_app', help='Path to vpxtool application')
     parser.add_argument('vpx_command', help='Path to VPinballX_GL application')
     parser.add_argument('vpx_table', nargs='?', default=None, help='Specific VPX table file (optional)')
-    # debug: print all arguments to the console
-    args = parser.parse_args()
-    print(args.vpx_table_path)
-    print(args.wheelimage_file_path)
-    print(args.vpxtool_app)
-    print(args.vpx_command)
-    print(args.vpx_table)
     return parser.parse_args()
 
 def run_vpxtool_info(vpxtool_app, vpx_table_path, vpx_table):
@@ -129,10 +109,6 @@ def run_vpxtool_info(vpxtool_app, vpx_table_path, vpx_table):
 
     #the command should look like ../vpxtool info vpx_table_path/vpx_table
     command = f"{vpxtool_app} info {path.join(vpx_table_path, vpx_table)}"
-
-    # debug: print command to the console
-    print(f"run_vpxtool_info command: {command}")
-
     
     try:
         # Execute the command. The subprocess.run function is used here with the arguments:
@@ -186,11 +162,11 @@ def parse_vpxtool_output(output, args):
 
     return table_info
 
-def read_upopdb(csv_path):
+def read_ffiend(csv_path):
     
-    # Reads the upopdb.csv file and returns its contents as a list of dictionaries.
-    # :param csv_path: Path to the upopdb.csv file.
-    # :return: A list of dictionaries, each representing a row in the upopdb.csv file.
+    # Reads the ffiend.csv file and returns its contents as a list of dictionaries.
+    # :param csv_path: Path to the ffiend.csv file.
+    # :return: A list of dictionaries, each representing a row in the ffiend.csv file.
     
     try:
         with open(csv_path, mode='r', encoding='utf-8') as csvfile:
@@ -205,8 +181,6 @@ def read_upopdb(csv_path):
                 next_id = max_id + 1
             else:
                 next_id = 1  # Starting ID if existing_data is empty
-
-            print(f"new_id: {next_id}")
             return rows, next_id
     except FileNotFoundError:
         print(f"File not found: {csv_path}")
@@ -216,8 +190,10 @@ def read_upopdb(csv_path):
         return []
 
 
-def update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image):
-    existing_data, next_id = read_upopdb(csv_path)
+def update_ffiend(csv_path, table_info, wheelimage_file_path, wheel_image):
+    # print that update_ffiend is starting
+    print(f"update_ffiend starting")
+    existing_data, next_id = read_ffiend(csv_path)
     table_found = False
     # check for a matching wheel image file in the wheel_image
     # use the table_info['path'] with the .vpx extension removed as the base name
@@ -230,24 +206,22 @@ def update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image):
     # unless img_file is empty, remove the leading path from the file name
     if img_file:
         img_file = img_file.split('/')[-1]
-    # print the image file to the console
-    print(f"update_upopdb table_info['image_file']: {img_file}")
-    
     for row in existing_data:
         if row['vpx_file_name'] == table_info['path']:
             # print original row to the console
-            print(f"update_upopdb original row: {row}")
+            print(f"update_ffiend original row: {row}")
             # Update existing row
             row['image_file'] = img_file
             row['display_name'] = f"{table_info['tablename']}"
             row['show_in_arcade'] = '1'
-            row['favorite'] = ''
+            # only update row['favorite'] if it is not equal to 1. Update it to 0 if it is not equal to 1
+            row['favorite'] = row['favorite'] if row['favorite'] == '1' else '0'
             row['notes'] = table_info.get('releasedate', '')  # Default to empty string if not found
             row['year'] = table_info.get('year', '')
             row['manufacturer'] = table_info.get('manufacturer', '')
             table_found = True
             # print the row to the console
-            print(f"update_upopdb row: {row}")
+            print(f"update_ffiend row: {row}")
             break  # Stop searching once the table is found and updated
     
     if not table_found:
@@ -277,7 +251,7 @@ def update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image):
 
 def scan_table(args):
     """
-    Scans a single VPX table and updates or adds its information in upopdb.csv.
+    Scans a single VPX table and updates or adds its information in ffiend.csv.
 
     :param args: Command line arguments passed to the script.
     """
@@ -285,7 +259,7 @@ def scan_table(args):
     vpxtool_app = args.vpxtool_app
     vpx_table_path = args.vpx_table_path
     vpx_table = args.vpx_table
-    csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
+    csv_path = 'ffiend.csv'  # Adjust the path to your ffiend.csv file as needed
     wheelimage_file_path = args.wheelimage_file_path
 
 
@@ -301,9 +275,9 @@ def scan_table(args):
         print(f"Failed to parse information for table {vpx_table}.")
         return
 
-    # Assuming that 'vpx_table' argument corresponds to the 'vpx_file_name' in upopdb.csv
+    # Assuming that 'vpx_table' argument corresponds to the 'vpx_file_name' in ffiend.csv
     # Adjust the table_info dictionary keys as necessary
-    table_info['vpx_table'] = args.vpx_table  # Add the 'vpx_table' key to table_info for update_upopdb
+    table_info['vpx_table'] = args.vpx_table  # Add the 'vpx_table' key to table_info for update_ffiend
     wheelimage_file_path = args.wheelimage_file_path
 
     # call parse_filename to get the year, name, and manufacturer from the vpx_table
@@ -326,28 +300,28 @@ def scan_table(args):
     # print the closest match to the console
     print(f"Closest matching wheel for {table_info['vpx_table']} is: {wheel_image}")
 
-    # Step 3: Update upopdb.csv with the obtained table information
-    # Evaluate return from update_upopdb and error check to see if the update was successful
-    # print the arguments to the console before calling update_upopdb
+    # Step 3: Update ffiend.csv with the obtained table information
+    # Evaluate return from update_ffiend and error check to see if the update was successful
+    # print the arguments to the console before calling update_ffiend
     print(f"csv_path: {csv_path}")
     print(f"table_info: {table_info}")
     print(f"wheelimage_file_path: {wheelimage_file_path}")
     print(f"wheel_image: {wheel_image}")
-    print(f"about to call update_upopdb")
-    update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image)
+    print(f"about to call update_ffiend")
+    update_ffiend(csv_path, table_info, wheelimage_file_path, wheel_image)
 
 
     
 
 
 
-    print(f"Successfully updated information for table {vpx_table} in upopdb.csv.")
+    print(f"Successfully updated information for table {vpx_table} in ffiend.csv.")
 
 
 def scan_all_tables(args):
     # original code
     """
-    Scans all VPX tables in the specified directory and updates or adds their information in upopdb.csv.
+    Scans all VPX tables in the specified directory and updates or adds their information in ffiend.csv.
 
     :param args: Command line arguments passed to the script.
     """
@@ -355,7 +329,7 @@ def scan_all_tables(args):
     # Extract the relevant arguments from args and store in vpxtool_app, vpx_table_path, and csv_path
     vpxtool_app = args.vpxtool_app
     vpx_table_path = args.vpx_table_path
-    csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
+    csv_path = 'ffiend.csv'  # Adjust the path to your ffiend.csv file as needed
 
     # Make a list of all tables in vpx_table_path (these are files that end in a .vpx extension)
     # and store the list in the variable vpx_tables
@@ -396,7 +370,7 @@ def scan_all_tables(args):
     # Extract the relevant arguments from args and store in vpxtool_app, vpx_table_path, and csv_path
     # vpxtool_app = args.vpxtool_app
     vpx_table_path = args.vpx_table_path
-    # csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
+    # csv_path = 'ffiend.csv'  # Adjust the path to your ffiend.csv file as needed
 
     # Make a list of all tables in vpx_table_path (these are files that end in a .vpx extension)
     # and store the list in the variable vpx_tables
@@ -429,7 +403,7 @@ def scan_all_tables(args):
         print(f"Scanning table: {vpx_table}")
         # print a count of the number of tables scanned so far to the console:
         # "Scanned {count} tables so far."
-        print(f"Scanned {count} tables to go.")
+        print(f"There are {count} more tables to go.")
         count -= 1
 
 

@@ -2,6 +2,7 @@ import os
 import csv
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QLineEdit, QHBoxLayout
 from PySide6.QtCore import Qt
+import subprocess
 
 def read_config():
     if os.path.exists('config.csv'):
@@ -72,6 +73,7 @@ class Configurator(QWidget):
         }
         write_config(config_items)
         self.close()
+
 
 if __name__ == "__main__":
     app = QApplication([])

@@ -26,10 +26,16 @@ with open('config.csv', mode='r', newline='') as csvfile:
         config_settings[config_item] = value
         display_name_dict[config_item] = label
 
-# Read the games data file and sort by the 5th column (column 4 if zero-indexed)
-with open('upopdb.csv', newline='') as csvfile:  # Update this path if needed
+with open('ffiend.csv', newline='') as csvfile:
     reader = csv.DictReader(csvfile)
-    games_data = sorted(reader, key=lambda row: row[reader.fieldnames[3]])
+    games_data = sorted(reader, key=lambda row: (-int(row.get('favorite', '0')), row['display_name'].lower()))
+
+
+# Read the games data file and sort by the 5th column (column 4 if zero-indexed)
+with open('ffiend.csv', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+    games_data = sorted(reader, key=lambda row: (-int(row.get('favorite') or '0'), row['display_name'].lower()))
+
 
 # Now, games_data is sorted based on the values in the 5th column
 
@@ -38,15 +44,21 @@ class ArcadeTile(QWidget):
         super().__init__()
         self.game_data = game_data
         self.config_settings = config_settings
+        # if the img file is not found, use "defaultimg.png"
+        if not self.game_data.get('image_file'):
+            self.game_data['image_file'] = 'defaultimg.png'
+        # print the game name and the image file to the console
+        print(f"Game: {self.game_data['display_name']}, Image: {self.game_data['image_file']}")
         self.initUI()
     
+
     def initUI(self):
         # Vertical layout for each tile
         layout = QVBoxLayout()
 
         # Determine the image path
-        image_file_name = self.game_data.get('image_file')  # Use get() method to avoid KeyError
-        image_path = (Path(self.config_settings['wheelimage_file_path']) / image_file_name) if image_file_name else Path('defaultimg.png')
+        image_file_name = self.game_data.get('image_file', 'defaultimg.png')
+        image_path = Path(self.config_settings['wheelimage_file_path']) / image_file_name
 
         # Game Image
         pixmap = QPixmap(str(image_path))
@@ -55,17 +67,25 @@ class ArcadeTile(QWidget):
         layout.addWidget(lbl_img)
 
         # Game Title
-        lbl_title = QLabel(self.game_data['display_name'])
+        display_name = self.game_data.get('display_name')
+        # if display_name is empty or not set, use the file name without extension as fallback
+        
+        if not display_name:
+            # Extract file name without extension from 'vpx_file_name'
+            display_name = Path(self.game_data.get('vpx_file_name', '')).stem
+        # else if display_name is == "[not set]", use the file name without extension as fallback
+        elif display_name == "[not set]":
+            # Extract file name without extension from 'vpx_file_name'
+            display_name = Path(self.game_data.get('vpx_file_name', '')).stem
+        lbl_title = QLabel(display_name)
         lbl_title.setFont(QFont("Arial", 14))
         layout.addWidget(lbl_title)
 
         # Favorite Button
-        btn_favorite = QPushButton('★' if self.game_data['favorite'] == 'True' else '☆')
-        layout.addWidget(btn_favorite)
-
-        # Connect the button click event to execute shell command
-        btn_favorite.clicked.connect(self.executeShellCommand)
-
+        # update the next line to show the star in yellow if the game is a favorite, grey if not
+        self.btn_favorite = QPushButton('★' if self.game_data['favorite'] == '1' else '☆')
+        self.btn_favorite.clicked.connect(self.toggleFavorite)
+        layout.addWidget(self.btn_favorite)
         self.setLayout(layout)
 
     def executeShellCommand(self):
@@ -102,6 +122,31 @@ class ArcadeTile(QWidget):
         # You can check the type of mouse click here, if necessary (e.g., right-click, left-click)
         self.executeShellCommand()
 
+    
+    def toggleFavorite(self):
+        # Toggle the in-memory favorite status
+        new_favorite_status = '1' if self.game_data['favorite'] == '0' else '0'
+        self.game_data['favorite'] = new_favorite_status
+
+        # Update the CSV file
+        games_data = []
+        with open('ffiend.csv', mode='r', newline='') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row['vpx_file_name'] == self.game_data['vpx_file_name']:
+                    row['favorite'] = new_favorite_status
+                games_data.append(row)
+
+        with open('ffiend.csv', mode='w', newline='') as file:
+            fieldnames = reader.fieldnames
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(games_data)
+
+        # Update the UI to reflect the change
+        self.btn_favorite.setText('★' if self.game_data['favorite'] == '1' else '☆')
+
+
 class ArcadeWindow(QMainWindow):
     def __init__(self, config_settings, games_data, display_name):
         super().__init__()
@@ -136,12 +181,27 @@ class ArcadeWindow(QMainWindow):
 
         # Preferences Button
         btn_preferences = QPushButton('Preferences')
-        def open_configure_and_exit():
-            # Start configure.py non-blocking
-            Popen(['python', 'configure.py', json.dumps(config_settings)])
-            # Exit main.py
-            sys.exit()
-        btn_preferences.clicked.connect(open_configure_and_exit)
+        def open_configure_and_wait():
+            # Start configure.py blocking
+            subprocess.run(['python', 'configure.py'])
+            # Wait for configure.py to finish. Continue running in the background
+            # once it completes, re-read the config.csv
+            with open('config.csv', mode='r', newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    config_item = row['config_item']
+                    label = row['label']
+                    value = row['value']
+                    description = row['description']
+                    config_settings[config_item] = value
+                    display_name_dict[config_item] = label
+
+            # refresh the main window if anything changed
+            self.refreshData(games_data)
+
+
+    
+        btn_preferences.clicked.connect(open_configure_and_wait)
         layout.addWidget(btn_preferences)
 
         # Scroll Area for Game Tiles
