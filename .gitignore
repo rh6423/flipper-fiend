@@ -1,5 +1,9 @@
 .DS_Store
 config.csv
+main.Spec
+build
+dist
+venv
 wheels/1-2-3 (Talleres del Llobregat).png
 wheels/2 in 1 (Bally 1964).png
 wheels/2001 (Gottlieb 1971).png

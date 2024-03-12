@@ -14,6 +14,14 @@ import json
 
 
 # Read the configuration file config.csv and store the settings in a dictionary
+# if config.csv does not exist, call configure.py to create it and wait for it to finish before proceeding to read the config.csv
+if not os.path.exists('config.csv'):
+    # Start configure.py blocking
+    subprocess.run(['python', 'configure.py'])
+    # Wait for configure.py to finish. Continue running in the background
+    # once it completes, read the config.csv
+
+# use this logic to read the config.csv file once it exists
 config_settings = {}
 display_name_dict = {}  # Renamed to avoid confusion with the variable inside the loop
 with open('config.csv', mode='r', newline='') as csvfile:
@@ -47,8 +55,6 @@ class ArcadeTile(QWidget):
         # if the img file is not found, use "defaultimg.png"
         if not self.game_data.get('image_file'):
             self.game_data['image_file'] = 'defaultimg.png'
-        # print the game name and the image file to the console
-        print(f"Game: {self.game_data['display_name']}, Image: {self.game_data['image_file']}")
         self.initUI()
     
 
@@ -156,7 +162,7 @@ class ArcadeWindow(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle("Arcade View")
+        self.setWindowTitle("Flipper Fiend")
         self.setGeometry(100, 100, 1400, 800)
 
         central_widget = QWidget()  # Create a central widget
