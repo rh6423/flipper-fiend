@@ -2,6 +2,9 @@ import argparse
 import csv
 import json
 import subprocess
+import os
+from fuzzywuzzy import process
+import re
 from os import path
 import re
 
@@ -19,6 +22,74 @@ import re
 # # If the 5th argument is provided, the script will scan only the specified VPX table.
 # Test command:
 # python scantables.py "~/Documents/VPXTables" "~/vpxpinball/wheelimg" "~/Documents/VPXTables/vpxtool" "foo" "Space\ Invaders\ \(Bally\ 1980\)\ v4.vpx"
+
+
+def parse_filename(vpx_file):
+    """
+    Extracts year, manufacturer, and name from the filename.
+    This is a simplified example and may need to be adjusted.
+    
+    EXAMPLE filenames:
+    1-2-3 (Talleres de Llobregat 1973) v4.vpx
+    2001 (Gottlieb 1971) v0.99a.vpx
+    250cc (Inder - 1992) v4.vpx
+    300 (Special Edition) (Gottlieb 1975) team scampa123 mod  v1.1.vpx
+    301 Bullseye (Grand Products 1986).vpx
+    4 Aces (Williams 1970) JP_VPX8.vpx
+    4X4 Atari.vpx
+    8 Ball (Williams 1966) 1.2.1.vpx
+    AC-DC LUCI Premium VR (Stern 2013) v1.1.vpx
+    Aaron Spinlling (Data East 1992) v1.02.vpx
+    AbraCaDabra (Gottlieb1975) 1.1.0.vpx
+    AceOfSpeed.vpx
+    Aces High (Bally 1965) v1.1.0 - 4K - Dakarx - English.vpx
+    Aces High (Bally 1965).vpx
+    Airport (Gottlieb 1969) 1.2.2.vpx
+    Aladdin's Castle (Bally 1976) - DOZER - MJR_1.01.vpx
+    Algar (Williams 1980) 1.33.vpx
+    Alice in Wonderland (Gottlieb 1948) JP_VPX8.vpx
+    Alien Poker (Williams 1980).vpx
+    Alien Star (Gottlieb 1984) v2.0.1.vpx
+    
+    """
+    # use a regex match on a space followed by four digits in a row 
+    # to find the year in the vpx_file
+    year_match = re.search(r'\s(\d{4})\)', vpx_file)
+    year = int(year_match.group(1)) if year_match else None
+    
+    # extract the name and manufacturer as name and manufacturer likely needs refinement
+    # the name is the first part of the filename
+    # the manufacturer is the second part of the filename
+    name_match = re.search(r'^(.*?)\s\(', vpx_file)
+    name = name_match.group(1) if name_match else None
+    manufacturer_match = re.search(r'\((.*?)\s\d{4}\)', vpx_file)
+    manufacturer = manufacturer_match.group(1) if manufacturer_match else None
+    return year, name, manufacturer
+
+
+def find_closest_match(vpx_file, png_files):
+    vpx_year, vpx_name, _ = parse_filename(vpx_file)
+    if vpx_year is None or vpx_name is None:  # Ensure vpx_name is also checked
+        print(f"Year or name not found for {vpx_file}, skipping...")
+        return None
+
+    best_match_score = 0
+    best_match_file = None
+    for png_file in png_files:
+        if not png_file:  # Skip empty strings
+            continue
+        # Assuming png_file is the full path, extract just the file name
+        png_name = os.path.basename(png_file).split('.')[0]  # Ensure it's treated as a string
+
+        if not png_name:  # Additional check
+            continue
+
+        score = process.extractOne(vpx_name, [png_name])[1]  # Ensure inputs are strings
+        if score > best_match_score:
+            best_match_score = score
+            best_match_file = png_file
+
+    return best_match_file
 
 
 def parse_arguments():
@@ -50,11 +121,18 @@ def run_vpxtool_info(vpxtool_app, vpx_table_path, vpx_table):
     # strip out any single quotes in vpx_table
     vpx_table = vpx_table.replace("'", "")
 
+    # spaces and parentheses in the file name need to be escaped
+    vpx_table = vpx_table.replace(" ", "\ ")
+    vpx_table = vpx_table.replace("(", "\(")
+    vpx_table = vpx_table.replace(")", "\)")
+    # if the vpx_table has multiple . in it, 
+
     #the command should look like ../vpxtool info vpx_table_path/vpx_table
     command = f"{vpxtool_app} info {path.join(vpx_table_path, vpx_table)}"
 
     # debug: print command to the console
-    print(command)
+    print(f"run_vpxtool_info command: {command}")
+
     
     try:
         # Execute the command. The subprocess.run function is used here with the arguments:
@@ -108,100 +186,6 @@ def parse_vpxtool_output(output, args):
 
     return table_info
 
-
-def run_vpxtool_index(vpxtool_app, vpx_table_path):
-    
-    # Indexes all tables in the specified directory using the vpxtool.
-    # :param vpxtool_app: Path to the vpxtool application.
-    # :param vpx_table_path: Path to the directory containing the VPX tables.
-    # :return: The path to the generated vpxtool_index.json file or None if the operation fails.
-    
-    # Prepare the command to be executed. It's important to use the full path to the vpxtool application
-    # and to specify the directory containing the VPX tables.
-    # command = [vpxtool_app, 'index', vpx_table_path]
-    command = f"{vpxtool_app} index {vpx_table_path}"
-    # print label "index command: " the command to the console
-    print(f"index command: {command}")
-    
-    try:
-        # Execute the command. The subprocess.run function is used here with the arguments:
-        # - command: the command and its arguments as a list.
-        # - capture_output: set to True to capture the command's standard output and standard error.
-        # - text: set to True to get the output as a string instead of bytes.
-        result = subprocess.run(command, capture_output=True, text=True, check=True, shell=True)
-        
-        # Assuming the indexing operation generates a vpxtool_index.json file in the specified directory,
-        # construct the path to this file.
-        json_file_path = path.join(vpx_table_path, 'vpxtool_index.json')
-        
-        # Optionally, you can check the output to confirm that the indexing was successful before returning the JSON file path.
-        if 'Indexed' in result.stdout:
-            return json_file_path
-        else:
-            print("Indexing failed or the output format has changed.")
-            return None
-    except subprocess.CalledProcessError as e:
-        # If the command execution failed, an exception is raised.
-        # Here, we're catching it to handle errors gracefully.
-        print(f"Error executing vpxtool index: {e}")
-        return None
-
-
-def parse_vpxtool_json(json_file, args):
-    # Parses the vpxtool_index.json file to extract details about each VPX table.
-    # :param json_file: Path to the vpxtool_index.json file.
-    # :return: A list of dictionaries, each containing details of a VPX table.
-    try:
-        with open(json_file, mode='r', encoding='utf-8') as f:
-            # Load the JSON data from the file
-            data = json.load(f)
-            # print a dictionary of the data to the console
-            print(f"data: {data}")
-            # how many data.tables are there?
-            print(f"length of data['tables']: {len(data['tables'])}")
-            # print the keys of the first entry in data['tables'] to the console
-            print(f"keys of the first entry in data['tables']: {data['tables'][0].keys()}")
-            # print the keys of data.tables.table_info to the console.
-            print(f"keys of data['tables'][0]['table_info']: {data['tables'][0]['table_info'].keys()}")
-            # print the values of the first entry in data['tables'] to the console, including the keys and values of the table_info dictionary
-            print(f"values of the first entry in data['tables'][0]: {data['tables'][0]}")
-            # Extract the information for each table
-            # each table in data['tables'] is a dictionary. Use these keys in tables_info:
-            # table_name, vpx_version, version, release_date, rules
-            tables_info = []
-            # print debug to the console: starting parse_vpxtool_json loop
-            print("starting parse_vpxtool_json loop")
-            # print debug: looping count of data['tables'] times
-            print(f"looping count of data['tables'] times: {len(data['tables'])}")
-            tablenumber = 1
-            for table in data['tables']:
-                print(f"table_name: {table['table_info']['path']}")
-                # extract the flat table_info dictionary from the nested table data
-                table_info = {
-                    'table_name': table['table_info']['path'],
-                    'version': table['table_info']['table_version'],
-                    'release_date': table['table_info']['release_date'],
-                    'rules': table['table_info']['table_rules'],
-                    'path': args.vpx_table if args.vpx_table else None
-                }
-                tables_info.append(table_info)
-                # print debug to the console when the loop completes and give the table number
-                print("parse_vpxtool_json loop complete for table number: " + str(tablenumber))
-                # if the table number is equal to length of data['tables'], print the table_info to the console
-                if tablenumber == len(data['tables']):
-                    # print the name of the last table in the loop to the console
-                    print(f"Last table in loop done: {table_info['table_name']}")
-                tablenumber += 1
-            return tables_info
-    except FileNotFoundError:
-        print(f"File not found: {json_file}")
-        return []
-    except Exception as e:
-        print(f"Error reading {json_file}: {e}")
-        return []
-
-
-
 def read_upopdb(csv_path):
     
     # Reads the upopdb.csv file and returns its contents as a list of dictionaries.
@@ -232,102 +216,62 @@ def read_upopdb(csv_path):
         return []
 
 
-"""
-def update_upopdb(csv_path, table_info):
-    existing_data = read_upopdb(csv_path)
+def update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image):
+    existing_data, next_id = read_upopdb(csv_path)
     table_found = False
-
-    # Normalize the input table's filename for comparison
-    input_file_name = table_info['vpx_table'].strip().lower()
-
-    for row in existing_data:
-        existing_file_name = row['vpx_file_name'].strip().lower()
-        if existing_file_name == input_file_name:
-            row.update({
-                'display_name': table_info['tablename'],
-                # Update other fields as necessary
-            })
-            table_found = True
-            break
-
-    if not table_found:
-        # Handle adding new entries as before
-        pass
-
-    # Continue with writing the updated data back to the CSV file
-
-    """
-
-def update_upopdb(csv_path, table_info):
-    # Assuming read_upopdb returns a tuple: (list_of_rows, next_id)
-    existing_data, id_value = read_upopdb(csv_path)
-    print(f"id_value: {id_value}")
-
+    # check for a matching wheel image file in the wheel_image
+    # use the table_info['path'] with the .vpx extension removed as the base name
+    # look in the wheel_image for a file with the same base name and a png, gif, webp or jpg extension
+    # if a matching file is found, set table_info['image_file'] to the matching file name
+    # if no matching file is found, set table_info['image_file'] to an empty string
+    # use the os.path.splitext function to split the file name into the base name and the extension
+    # img_file should be the path to the wheel_image directory/filename.png
+    img_file = wheel_image
+    # unless img_file is empty, remove the leading path from the file name
+    if img_file:
+        img_file = img_file.split('/')[-1]
+    # print the image file to the console
+    print(f"update_upopdb table_info['image_file']: {img_file}")
     
-    table_found = False
-    print(f"length of table_info: {len(table_info)}")
-    print(f"keys of table_info: {table_info.keys()}")
-    print(f"table_info: {table_info}")
-    # print id_value to the console
-    print(f"id_value: {id_value}")
-    table_found = False
-    # print the length of the dictionary for table_info to the console
-    print(f"length of table_info: {len(table_info)}")
-    # print the keys of the dictionary for table_info to the console
-    print(f"keys of table_info: {table_info.keys()}")
-    # print the dictionary for table_info to the console
-    print(f"table_info: {table_info}")
-    # generate an unique id
-    # look for the highest id in the existing_data and add 1
-
-    # Here, we assume 'vpx_table' is the correct key containing the file name
     for row in existing_data:
-        # print all values contained in the row to the console
-        print(f"row: {row}")
-        display_name = f"{table_info['path']}"
-        # real_file = vpx_file_name from row
-        real_file = row['vpx_file_name']
-        # DEBUG: print display_name and real_file and row['vpx_file_name'] to the console
-        print(f"display_name: {display_name}")
-        print(f"real_file: {real_file}")
-        print(f"row['vpx_file_name']: {row['vpx_file_name']}")
-        # remove the leading path from vpx_file_name
-        vpx_file_name = re.sub(r"\\([ ])", r"\1", row['vpx_file_name'])
-        if row['vpx_file_name'] == real_file:  # Direct string comparison
-            row.update({
-                'display_name': display_name,  # Assuming this needs to be provided or generated
-                'notes': table_info.get('releasedate')  # Use table rules for notes, with a default value of '
-                # Update other fields as necessary
-            })
+        if row['vpx_file_name'] == table_info['path']:
+            # print original row to the console
+            print(f"update_upopdb original row: {row}")
+            # Update existing row
+            row['image_file'] = img_file
+            row['display_name'] = f"{table_info['tablename']}"
+            row['show_in_arcade'] = '1'
+            row['favorite'] = ''
+            row['notes'] = table_info.get('releasedate', '')  # Default to empty string if not found
+            row['year'] = table_info.get('year', '')
+            row['manufacturer'] = table_info.get('manufacturer', '')
             table_found = True
-            break
-        if not table_found:
-            # print table_info['path'] to the console
-            print(table_info['path'])
-            real_file = re.sub(r"\\([ ])", r"\1", table_info['path'])
-            # Create a new row for the table
-            new_row = {
-                'id': id_value,  # local uuid for the table file
-                'vpx_file_name': real_file,  # Assuming this needs to be provided or generated
-                'VPS-ID': '',  # Assuming a default or generated value
-                'image_file': '',  # Assuming this needs to be provided or generated
-                'display_name': display_name,
-                'show_in_arcade': '1',  # Assuming a default value
-                'favorite': '',  # Assuming a default value
-                'notes': table_info.get('releasedate')  # Use table rules for notes, with a default value of ''
-            }
-            existing_data.append(new_row)
-            # increment the id_value
-            id_value += 1
+            # print the row to the console
+            print(f"update_upopdb row: {row}")
+            break  # Stop searching once the table is found and updated
+    
+    if not table_found:
+        # Append new row
+        new_row = {
+            'id': str(next_id),
+            'vpx_file_name': table_info['path'],
+            'VPS-ID': '',
+            'image_file': '',
+            # if table_info['tablename'] is not set, use the table_info['path'] instead
+            'display_name': table_info['tablename'] if table_info['tablename'] else table_info['path'],
+            'show_in_arcade': '1',
+            'favorite': '',
+            'notes': table_info.get('releasedate', ''),
+            'year': table_info.get('year', ''),
+            'manufacturer': table_info.get('manufacturer', '')
+        }
+        existing_data.append(new_row)
 
-    # Write the updated data back to the CSV file
+    # Write updates or new entry to CSV, outside the loop
     with open(csv_path, mode='w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['id', 'vpx_file_name', 'VPS-ID', 'image_file', 'display_name', 'show_in_arcade', 'favorite', 'notes']
+        fieldnames = ['id', 'vpx_file_name', 'VPS-ID', 'image_file', 'display_name', 'show_in_arcade', 'favorite', 'notes', 'year', 'manufacturer']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-        # Write the header
         writer.writeheader()
-        # Write the updated data
         writer.writerows(existing_data)
 
 
@@ -342,6 +286,8 @@ def scan_table(args):
     vpx_table_path = args.vpx_table_path
     vpx_table = args.vpx_table
     csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
+    wheelimage_file_path = args.wheelimage_file_path
+
 
     # Step 1: Run vpxtool to get information about the table
     vpxtool_output = run_vpxtool_info(vpxtool_app, vpx_table_path, vpx_table)
@@ -358,102 +304,133 @@ def scan_table(args):
     # Assuming that 'vpx_table' argument corresponds to the 'vpx_file_name' in upopdb.csv
     # Adjust the table_info dictionary keys as necessary
     table_info['vpx_table'] = args.vpx_table  # Add the 'vpx_table' key to table_info for update_upopdb
+    wheelimage_file_path = args.wheelimage_file_path
+
+    # call parse_filename to get the year, name, and manufacturer from the vpx_table
+    year, name, manufacturer = parse_filename(vpx_table)
+    
+    # add the year, name, and manufacturer to the table_info dictionary
+    table_info['year'] = year
+    table_info['name'] = name
+    table_info['manufacturer'] = manufacturer
+
+    # get a list of wheel image files from the wheel_image
+    # and store the list in the variable png_files
+    png_files = subprocess.run(f"ls -1 {wheelimage_file_path}/*.png", capture_output=True, text=True, check=True, shell=True)
+    
+    # strip the leading path from each file name - /foo/bar/image.png becomes image.png
+    png_files = png_files.stdout.split('\n')
+    
+    # find the closest match from the png_files
+    wheel_image = find_closest_match(vpx_table, png_files)
+    # print the closest match to the console
+    print(f"Closest matching wheel for {table_info['vpx_table']} is: {wheel_image}")
 
     # Step 3: Update upopdb.csv with the obtained table information
-    update_upopdb(csv_path, table_info)
+    # Evaluate return from update_upopdb and error check to see if the update was successful
+    # print the arguments to the console before calling update_upopdb
+    print(f"csv_path: {csv_path}")
+    print(f"table_info: {table_info}")
+    print(f"wheelimage_file_path: {wheelimage_file_path}")
+    print(f"wheel_image: {wheel_image}")
+    print(f"about to call update_upopdb")
+    update_upopdb(csv_path, table_info, wheelimage_file_path, wheel_image)
+
+
+    
+
+
+
     print(f"Successfully updated information for table {vpx_table} in upopdb.csv.")
 
 
 def scan_all_tables(args):
+    # original code
     """
     Scans all VPX tables in the specified directory and updates or adds their information in upopdb.csv.
 
     :param args: Command line arguments passed to the script.
     """
-    # Extract the relevant arguments
+    """
+    # Extract the relevant arguments from args and store in vpxtool_app, vpx_table_path, and csv_path
     vpxtool_app = args.vpxtool_app
     vpx_table_path = args.vpx_table_path
     csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
 
-    # Index all tables using vpxtool
-    json_file_path = run_vpxtool_index(vpxtool_app, vpx_table_path)
-    print(f"json_file_path: {json_file_path}")
-    if json_file_path is None:
-        print("Failed to index tables using vpxtool.")
-        return
-    """
-    Here's an example entry from the json_file_path:
-    {
-      "path": "/Users/legba/Documents/VPXTables/Fun Land (Gottlieb 1968)_Teisen_MOD.vpx",
-      "table_info": {
-        "table_name": "Fun Land",
-        "author_name": null,
-        "table_blurb": null,
-        "table_rules": null,
-        "author_email": null,
-        "release_date": null,
-        "table_save_rev": "55",
-        "table_version": "1.0",
-        "author_website": null,
-        "table_save_date": "Thu Sep 21 17:32:02 2023",
-        "table_description": null,
-        "properties": {}
-      },
-      "game_name": "FunLand_1968",
-      "b2s_path": null,
-      "local_rom_path": null,
-      "requires_pinmame": false,
-      "last_modified": "2023-09-22T00:32:02+00:00"
-    },
-    """
+    # Make a list of all tables in vpx_table_path (these are files that end in a .vpx extension)
+    # and store the list in the variable vpx_tables
+    # use the subprocess.run function to execute the command
+    # the command should look like ls vpx_table_path/*.vpx
+    vpx_tables = subprocess.run(f"ls -1 {vpx_table_path}/*.vpx", capture_output=True, text=True, check=True, shell=True)
 
-    # Parse the JSON file into table_info (information about all tables). Provide debug level output to the console
-    tables_info = parse_vpxtool_json(json_file_path, args)
-    # print the number of entries in the dictionary labeled "tables_info length: " to the console
-    print(f"tables_info length: {len(tables_info)}")
-    # verify the schema of tables_info matches the schema in the example entry above
-    # extract the schema from the first entry in tables_info
-    # print the table name for the first table to the console
-    print(f"first table: {tables_info[0]['table_name']}")
-    if not tables_info:
-        print(f"Failed to parse table information from {json_file_path}.")
-        return
-    # check each table in the list - does it exist in the upopdb.csv file?
-    for table in tables_info:
-        # print the table name to the console
-        print(f"table name returned to scan all tables: {table['table_name']}")
-        # print the table path to the console
-        print(f"table path returned to scan all tables: {table['path']}")
-        # set table['path'] to str(table['table_name']) with the leading path stripped, and append the string '.vpx'
-        table['path'] = str(table['table_name']).split('/')[-1] + '.vpx'
-        # print correct table['path'] to the console
-        print(f"correct table['path']: {table['path']}")
+    # Split the output from the command into a list of table names
+    # the list of table names is stored in vpx_tables
+    vpx_tables = vpx_tables.stdout.split('\n')
 
+    # strip out the path from each table name
+    # use a list comprehension to remove the path from each table name
+    vpx_tables = [path.split('/')[-1] for path in vpx_tables]
 
+    # print the total number of vpx_tables to the console
+    print(f"Total number of tables: {len(vpx_tables)}")
 
-        # table['path'] = vpx_table_filename  # Assuming 'vpx_table' key is used in update_upopdb function  
-        table['version'] = table.pop('table_version', 'Error')  # Rename 'table_version' to 'version
-        table['release_date'] = table.pop('release_date', None)
-        table['rules'] = table.pop('table_rules', None)
-        # print both  the vpx_table_filename and the table_info to the console
-        print(f"vpx_table_filename: {table['path']}")
-        print(f"table_info: {table['path']}")
-        # Update the CSV for each table
-        update_upopdb(csv_path, table)
-        """table_info = {
-            'table_name': table['table_info']['table_name'],
-            'version': table['table_info']['table_version'],
-            'release_date': table['table_info']['release_date'],
-            'rules': table['table_info']['table_rules'],
-            'path': args.vpx_table if args.vpx_table else None
-            """
+    # Iterate through each table in the list and call scan_table for each table
+    # use a for loop to iterate through each table in the list
+    for vpx_table in vpx_tables:
+        # call scan_table for each table
+        # the call will need to pass modified args and include each table in the list
+        # create my_args as a copy of args and substitute vpx_table for my_args.vpx_table
+        # before calling scan_table
+        my_args = args
+        my_args.vpx_table = vpx_table
+        scan_table(my_args)
+        # print the table name to the console: "Scanning table: {vpx_table}"
+        print(f"Scanning table: {vpx_table}")
+        # print a count of the number of tables scanned so far to the console:
+        # "Scanned {count} tables so far."
+        count = len(vpx_tables)
+        print(f"Scanned {count} tables so far.")
+        count -= 1
+        """
+    # refactored code will call scan_table for each table in the list
+    # Extract the relevant arguments from args and store in vpxtool_app, vpx_table_path, and csv_path
+    # vpxtool_app = args.vpxtool_app
+    vpx_table_path = args.vpx_table_path
+    # csv_path = 'upopdb.csv'  # Adjust the path to your upopdb.csv file as needed
 
+    # Make a list of all tables in vpx_table_path (these are files that end in a .vpx extension)
+    # and store the list in the variable vpx_tables
+    # use the subprocess.run function to execute the command
+    # the command should look like ls vpx_table_path/*.vpx
+    vpx_tables = subprocess.run(f"ls -1 {vpx_table_path}/*.vpx", capture_output=True, text=True, check=True, shell=True)
 
+    # Split the output from the command into a list of table names
+    # the list of table names is stored in vpx_tables
+    vpx_tables = vpx_tables.stdout.split('\n')
+    
+    # strip out the path from each table name
+    # use a list comprehension to remove the path from each table name
+    vpx_tables = [path.split('/')[-1] for path in vpx_tables]
+    count = len(vpx_tables)
+    # print the total number of vpx_tables to the console
+    print(f"Total number of tables: {len(vpx_tables)}")
 
-
-
-
-    print(f"Successfully updated information for all tables in {vpx_table_path} in upopdb.csv.")
+    # Iterate through each table in the list and call scan_table for each table
+    # use a for loop to iterate through each table in the list
+    for vpx_table in vpx_tables:
+        # call scan_table for each table
+        # the call will need to pass modified args and include each table in the list
+        # create my_args as a copy of args and substitute vpx_table for my_args.vpx_table
+        # before calling scan_table
+        my_args = args
+        my_args.vpx_table = vpx_table
+        scan_table(my_args)
+        # print the table name to the console: "Scanning table: {vpx_table}"
+        print(f"Scanning table: {vpx_table}")
+        # print a count of the number of tables scanned so far to the console:
+        # "Scanned {count} tables so far."
+        print(f"Scanned {count} tables to go.")
+        count -= 1
 
 
 def main():
